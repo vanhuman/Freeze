@@ -9,14 +9,20 @@
 s.waitForBoot({
 
 	var version = "0.4";
-	var pID = 0;
+	var pID = 1;
 	var cfg = (
-		project: ["PJ"],
-		name: ["   PJ"],
-		filePath: ["/Users/robert/---data---/audio/samples/voice/pjharvey1.aif"],
-		freezeRow: [["LOW","HIGH FADE","LOW","LOOP","PULSE"]]
+		project: ["PJ", "DB"],
+		name: ["   PJ", "DB"],
+		filePath: [
+			"/Users/robert/---data---/audio/samples/voice/pjharvey1.aif",
+			"/Users/Robert/---data---/Audio/samples/Debussy/LaMer3.wav"
+		],
+		freezeRow: [
+			["LOW","HIGH FADE","LOW","LOOP","PULSE"],
+			["LOW","HIGH FADE","LOW","LOOP","PULSE"]
+		]
 	);
-	var filePath = cfg.filePath[pID];
+	var filePath = cfg.filePath[pID], soundFile, fReadBuffer;
 	var freezeInstance = Array.newClear(10);
 
 	var wMF, drawDone = 0, backDrop, bFile, tFilePath,tHeader, buffer, cRecord, pRecord, tRecord, tChannels, backBox, bRecord;
@@ -27,8 +33,17 @@ s.waitForBoot({
 	if(filePathShort.size < filePath.size, {filePathShort = "..."++filePathShort});
 	filePathShort = " "++filePathShort;
 
-	buffer = Buffer.alloc(s, s.sampleRate*60,2);
-	buffer.read(filePath);
+	buffer = Buffer.alloc(s, s.sampleRate * 60, 2);
+	fReadBuffer = {
+		arg filePath;
+		var numberOfLoads;
+		soundFile = SoundFile.openRead(filePath);
+		numberOfLoads = (buffer.numFrames / soundFile.numFrames).ceil;
+		numberOfLoads.do { arg count;
+			buffer.read(filePath, bufStartFrame: count * soundFile.numFrames);
+		};
+	};
+	fReadBuffer.value(filePath);
 
 	wMF = Window(cfg.project[pID]++"Freeze" + version, Rect(20,300,600,630),false)
 	.background = Color.grey(0.9)
@@ -69,7 +84,8 @@ s.waitForBoot({
 				arg path;
 				filePath = path[0];
 				filePath.postln;
-				buffer.read(filePath.asString);
+				fReadBuffer.(filePath.asString);
+				// buffer.read(filePath.asString);
 				filePathShort = subStr(filePath, filePath.findBackwards("/",offset: max(0,(filePath.size - 30))), filePath.size);
 				if(filePathShort.size < filePath.size, {filePathShort = "..."++filePathShort});
 				filePathShort = " "++filePathShort;
@@ -127,6 +143,19 @@ s.waitForBoot({
 		freezeInstance[3] = MasterFreeze.new(cfg.freezeRow[pID][3], buffer, win: wMF, guiTop: 230, guiIndex: 4, initWait:1, filterFade: 20,
 			filterAttack: 10, pitchFactor: 1, waitArray: [15,20,20,10,5,5,10,20], openArray: [1,1,1,1,1,1,1,1], freezeType:3, gainFactor: -12,
 			output: [2,3]);
+		freezeInstance[4] = MasterFreeze.new(cfg.freezeRow[pID][4], buffer, win: wMF, guiTop: 230, guiIndex: 5, initWait:1, filterFade: 20,
+			filterAttack: 10, pitchFactor: 0.4, waitArray: [20,20,20,10,5,5,10,20], openArray: [1,1,1,1,1,1,1,1], freezeType:4, gainFactor: -6);
+	}
+	{pID == 1} // DBFreeze
+	{
+		freezeInstance[0] = MasterFreeze.new(cfg.freezeRow[pID][0], buffer, win: wMF, guiTop: 230, initWait:1,
+			filterFade: 20, filterAttack: 10, pitchFactor: 0.2, waitArray: [10,10,20,20,5,5,10,20], freezeType:1, gainFactor: -3);
+		freezeInstance[1] = MasterFreeze.new(cfg.freezeRow[pID][1], buffer, win: wMF, guiTop: 230, guiIndex: 2, initWait:2, filterFade: 20,
+			filterAttack: 10, pitchFactor: 2, waitArray: [20,10,20,10,5,5,10,20], freezeType:2, gainFactor: -12);
+		freezeInstance[2] = MasterFreeze.new(cfg.freezeRow[pID][2], buffer, win: wMF, guiTop: 230, guiIndex: 3, initWait:1, filterFade: 20,
+			filterAttack: 10, pitchFactor: 0.3, waitArray: [10,10,20,20,5,5,10,20], freezeType:1, gainFactor: -3);
+		freezeInstance[3] = MasterFreeze.new(cfg.freezeRow[pID][3], buffer, win: wMF, guiTop: 230, guiIndex: 4, initWait:1, filterFade: 20,
+			filterAttack: 10, pitchFactor: 1, waitArray: [15,20,20,10,5,5,10,20], openArray: [1,1,1,1,1,1,1,1], freezeType:3, gainFactor: -12);
 		freezeInstance[4] = MasterFreeze.new(cfg.freezeRow[pID][4], buffer, win: wMF, guiTop: 230, guiIndex: 5, initWait:1, filterFade: 20,
 			filterAttack: 10, pitchFactor: 0.4, waitArray: [20,20,20,10,5,5,10,20], openArray: [1,1,1,1,1,1,1,1], freezeType:4, gainFactor: -6);
 	}
